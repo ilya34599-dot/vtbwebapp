@@ -13,7 +13,7 @@ const CONFIG = {
   WORKERS_CHAT_ID: "-5183292635",
 
   // Домен Vercel (без / в конце)
-  WEBAPP_URL: "https://project-igfs2.vercel.app",
+  WEBAPP_URL: "https://vtbwebapp-mocha.vercel.app/",
 };
 
 module.exports = CONFIG;
